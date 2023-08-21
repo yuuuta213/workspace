@@ -1,3 +1,8 @@
+export const metadata = {
+  title: "コンタクト",
+  description: "コンタクトページ-Yamasakiの模写コーディングサイトです",
+}
+
 const Contact = () => {
   return (
     <>

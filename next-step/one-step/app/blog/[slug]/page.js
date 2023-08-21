@@ -1,24 +1,26 @@
 //記事ページの汎用のページ
-
 import Image from "next/image";
-import fs from "fs";//ファイル読み込み
-import path from "path";//ファイルへのパス
-import matter from "gray-matter";
 import ReactMarkdown from "react-markdown"
+import PrevNext from "@/app/components/prevNext";
+import { getAllBlogs, getSingleBlog } from "@/app/utils/mdQueries";
 
-//ページ毎にurlの取得
-async function getSingleBlog(context) {
-  const { slug } = context.params
-  const data = await import(`../../../data/${slug}.md`)
-  const singleDocument = matter(data.default)
 
+export async function generateMetadata(props) {
+  const { singleDocument } = await getSingleBlog(props)
   return {
-    singleDocument: singleDocument
+    title: singleDocument.data.title,
+    description: singleDocument.data.excerpt,
   }
 }
 
+//ページ毎にurlの取得
 const SingleBlog = async (props) => {
   const { singleDocument } = await getSingleBlog(props)
+  //prev, nextの作成
+  const { blogs } = await getAllBlogs()
+  const prev = blogs.filter(blog => blog.frontmatter.id === singleDocument.data.id - 1)
+  const next = blogs.filter(blog => blog.frontmatter.id === singleDocument.data.id + 1)
+
 
   return (
     <>
@@ -38,6 +40,7 @@ const SingleBlog = async (props) => {
           <p>{singleDocument.data.data}</p>
           <ReactMarkdown>{singleDocument.content}</ReactMarkdown>
         </div>
+        <PrevNext prev={prev} next={next} />
       </div>
     </>
   )
@@ -47,26 +50,6 @@ export default SingleBlog
 
 //登録したいslugをまとめる
 export async function generateStaticParams() {
-
-  // /blog/page.jsのgetAllBlogsの再利用
-  async function getAllBlogs() {
-    const files = fs.readdirSync(path.join("data"))
-    const blogs = files.map((fileName) => {
-      const slug = fileName.replace(".md", "")
-      const fileData = fs.readFileSync(
-        path.join("data", fileName),
-        "utf-8"
-      )
-      const { data } = matter(fileData)
-      return {
-        frontmatter: data,
-        slug: slug,
-      }
-    })
-    return {
-      blogs: blogs
-    }
-  }
   //slugを取得するblogsで呼び出し
   const { blogs } = await getAllBlogs()
   //mapで展開し、pathに格納
